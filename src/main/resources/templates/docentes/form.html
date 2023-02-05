@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+
+<head th:replace="~{template :: head(${titulo})}">
+</head>
+
+<body>
+    <header th:replace="~{template :: header}"></header>
+    <div th:replace="~{template :: menu}"></div>
+
+    <main id="main" class="main">
+        <div th:replace="~{template :: breadcrumb(${titulo}, 'h')}"></div>
+        <section class="section row">
+            <div class="col-12">
+                <div class="card">
+                    <div class="card-header">
+                        <h4 class="card-title">[[${titulo}]]</h4>
+                    </div>
+                    <div class="card-body mt-1">
+                        <form th:action="@{/docentes/guardar}" method="post" class="row" th:object="${docente}">
+                            <div class="col-12 mt-2">
+                                <input type="hidden" name="idDocente" id="idDocente" th:field="*{idDocente}">
+                                <label for="nombre" class="form-label">Nombre</label>
+                                <input type="text" class="form-control"
+                                    th:classappend="${#fields.hasErrors('nombre')}?'is-invalid'" id="nombre"
+                                    name="nombre" th:field="*{nombre}" placeholder="Nombre">
+                                <span th:if="${#fields.hasErrors('nombre')}" th:errors="*{nombre}"
+                                    class="invalid-feedback"></span>
+                            </div>
+                            <div class="col-12 col-lg-6 mt-2">
+                                <label for="apellidoPaterno" class="form-label">Apellido paterno</label>
+                                <input type="text" class="form-control"
+                                    th:classappend="${#fields.hasErrors('apellidoPaterno')}?'is-invalid'"
+                                    id="apellidoPaterno" name="apellidoPaterno" th:field="*{apellidoPaterno}"
+                                    placeholder="Apellido paterno">
+                                <span th:if="${#fields.hasErrors('apellidoPaterno')}" th:errors="*{apellidoPaterno}"
+                                    class="invalid-feedback"></span>
+                            </div>
+                            <div class="col-12 col-lg-6 mt-2">
+                                <label for="apellidoMaterno" class="form-label">Apellido materno</label>
+                                <input type="text" class="form-control" id="apellidoMaterno" name="apellidoMaterno"
+                                    th:field="*{apellidoMaterno}" placeholder="Apellido materno">
+                            </div>
+                            <div class="col-12 col-lg-6 mt-2">
+                                <label for="numeroEmpleado" class="form-label">Número de empleado</label>
+                                <input type="text" class="form-control"
+                                    th:classappend="${#fields.hasErrors('numeroEmpleado')}?'is-invalid'"
+                                    th:field="*{numeroEmpleado}" placeholder="Número de empleado">
+                                <span th:if="${#fields.hasErrors('numeroEmpleado')}" th:errors="*{numeroEmpleado}"
+                                    class="invalid-feedback"></span>
+                            </div>
+                            <div class="col-12 col-lg-6 mt-2">
+                                <label for="tipoEmpleado" class="form-label">Tipo de empleado</label>
+                                <select class="form-select" name="tipoEmpleado" id="tipoEmpleado">
+                                    <option value="">Seleccione...</option>
+                                    <option th:each="tipo : ${tiposEmpleado}" th:value="${tipo.getIdTipoEmpleado()}"
+                                        th:text="${tipo.getTipo()}"
+                                        th:selected="*{tipoEmpleado} ? ${tipo.getIdTipoEmpleado()} == *{tipoEmpleado.getIdTipoEmpleado()}">
+                                    </option>
+                                </select>
+                            </div>
+                            <div class="row mx-auto col-12 mt-3">
+                                <div class="col-6 text-end">
+                                    <input type="radio" name="estatus" id="estatus-1" class="btn-check" value="1" th:field="*{estatus}">
+                                    <label for="estatus-1" class="btn btn-outline-success px-3 px-sm-4">ACTIVO</label>
+                                </div>
+                                <div class="col-6">
+                                    <input type="radio" name="estatus" id="estatus-0" class="btn-check" value="0" th:field="*{estatus}">
+                                    <label for="estatus-0" class="btn btn-outline-danger px-3 px-sm-4">INACTIVO</label>
+                                </div>
+                            </div>
+                            <div class="row mx-auto px-2 px-md-5 col-12 mt-3">
+                                <button type="submit" class="btn btn-primary">Guardar</button>
+                                <a th:href="@{/docentes}" class="btn btn-secondary mt-2">Cancelar</a>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <div th:replace="~{template :: footer}"></div>
+    <div th:replace="~{template :: scripts}"></div>
+</body>
+
+</html>

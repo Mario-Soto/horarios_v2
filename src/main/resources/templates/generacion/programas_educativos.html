@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+
+<head th:replace="~{template :: head(${titulo})}">
+</head>
+
+<body>
+    <header th:replace="~{template :: header}"></header>
+    <div th:replace="~{template :: menu}"></div>
+
+    <main id="main" class="main">
+        <div th:replace="~{template :: breadcrumb(${titulo}, 'h')}"></div>
+        <section class="section row">
+            <div class="col-12">
+                <div class="card">
+                    <div class="card-header">
+                        <h4 class="card-title">[[${titulo}]]</h4>
+                    </div>
+                    <div class="card-body">
+                        <form th:action="@{/generar-grupos}" class="row" method="post">
+                            <div class="col-12 ms-2 mt-2 form-check form-switch" th:each=" pe : ${programasEducativos}">
+                                <input type="checkbox" th:name="${pe.getNombreCorto()}" th:id="${pe.getNombreCorto()}"
+                                    class="form-check-input" role="switch" th:value="${pe.getIdProgramaEducativo()}" checked>
+                                <label for="${pe.getNombreCorto()}" class="form-check-label"
+                                    th:text="${pe.getNombre()}"></label>
+                            </div>
+                            <div class="col-12 ms-2 mt-2">
+                                <button type="submit" class="btn btn-primary me-3">Enviar</button>
+                                <a th:href="@{/}" class="btn btn-secondary">Cancelar</a>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <div th:replace="~{template :: footer}"></div>
+    <div th:replace="~{template :: scripts}"></div>
+</body>
+
+</html>

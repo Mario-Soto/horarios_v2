@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+
+<head th:replace="~{template :: head(${titulo})}">
+</head>
+
+<body>
+    <header th:replace="~{template :: header}"></header>
+    <div th:replace="~{template :: menu}"></div>
+
+    <main id="main" class="main">
+        <div th:replace="~{template :: breadcrumb(${titulo}, 'h')}"></div>
+        <section class="section row">
+            <div class="col-12">
+                <div class="card">
+                    <div class="card-header">
+                        <h4 class="card-title">[[${titulo}]]</h4>
+                        <div class="card-tools">
+                            <a href="/docentes/nuevo" class="btn btn-primary btn-sm">
+                                <i class="fas fa-plus"></i> Nuevo
+                            </a>
+                        </div>
+                    </div>
+                    <div class="card-body">
+                        <table class="pure-table pure-table-horizontal pure-table-striped datatable">
+                            <thead>
+                                <tr>
+                                    <th></th>
+                                    <th>No. Empleado</th>
+                                    <th>Nombre</th>
+                                    <th>Estatus</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr th:each="docente : ${docentes}">
+                                    <td>
+                                        <a th:href="@{/docentes/editar/{id}(id=${docente.getIdDocente()})}"
+                                            class="btn btn-primary btn-sm">
+                                            <i class="fas fa-eye"></i>
+                                        </a>
+
+                                    </td>
+                                    <td th:text="${docente.getNumeroEmpleado()}"></td>
+                                    <td th:text="${docente.getNombreCompletoPorApellidos()}"></td>
+                                    <td>
+                                        <span th:if="${docente.getEstatus()}" th:text="Activo"
+                                            class="badge text-bg-success"></span>
+                                        <span th:unless="${docente.getEstatus()}" th:text="Baja"
+                                            class="badge text-bg-danger"></span>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <div th:replace="~{template :: footer}"></div>
+    <div th:replace="~{template :: scripts}"></div>
+</body>
+
+</html>
