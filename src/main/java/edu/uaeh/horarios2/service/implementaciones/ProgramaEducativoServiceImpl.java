@@ -1,6 +1,7 @@
 package edu.uaeh.horarios2.service.implementaciones;
 
 import java.util.List;
+import java.util.HashMap;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -59,4 +60,12 @@ public class ProgramaEducativoServiceImpl implements ProgramaEducativoService {
         return programaEducativoDAO.findByNombreCorto(nombre).orElse(null);
     }
     
+    @Override
+    public HashMap<Long,ProgramaEducativo> getMap(List<ProgramaEducativo> lista){
+        HashMap<Long, ProgramaEducativo> map = new HashMap<>();
+        for(ProgramaEducativo pe : lista){
+            map.put(pe.getIdProgramaEducativo(), pe);
+        }
+        return map;
+    }
 }

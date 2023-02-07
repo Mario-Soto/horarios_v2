@@ -13,6 +13,7 @@ import jakarta.persistence.OneToMany;
 
 import edu.uaeh.horarios2.domain.Materia;
 import lombok.Data;
+import lombok.ToString.Exclude;
 
 @Data
 @Entity
@@ -23,10 +24,11 @@ public class AreaPropedeutica implements Serializable{
     private Long idAreaPropedeutica;
     private String area;
     private String nombre;
-    private Integer estado;
+    private Integer estatus;
     @OneToMany
     @JoinTable(name = "materia_propedeutico",
         joinColumns = @JoinColumn(name = "area"),
         inverseJoinColumns = @JoinColumn(name = "materia"))
+    @Exclude
     private List<Materia> materias;
 }
