@@ -10,9 +10,11 @@ import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
+import jakarta.persistence.JoinTable;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.OneToMany;
-
+import edu.uaeh.horarios2.domain.catalogos.AreaPropedeutica;
+import edu.uaeh.horarios2.domain.catalogos.MateriaExtra;
 import edu.uaeh.horarios2.domain.catalogos.ProgramaEducativo;
 import lombok.AllArgsConstructor;
 import lombok.Data;
@@ -36,6 +38,25 @@ public class Grupo implements Serializable {
     private Integer turno;
     @OneToMany(mappedBy = "grupo", fetch = FetchType.EAGER)
     private List<Clase> clases;
+    @ManyToOne
+    @JoinTable(name = "grupo_propedeutico",
+        joinColumns = @JoinColumn(name = "grupo"),
+        inverseJoinColumns = @JoinColumn(name = "area_propedeutica")
+    )
+    private AreaPropedeutica areaPropedeutica;
+
+    @OneToMany(mappedBy = "grupo")
+    private List<MateriaExtra> materiaExtras;
+
+
+    public Materia getMateriaDestino(Materia origen){
+        for(MateriaExtra materia : this.materiaExtras){
+            if(materia.getMateriaOrigen().equals(origen)){
+                return materia.getMateria();
+            }
+        }
+        return null;
+    }
 
     public Boolean tieneOptativas() {
         for (Clase clase : this.clases) {
