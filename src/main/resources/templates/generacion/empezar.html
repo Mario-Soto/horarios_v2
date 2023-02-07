@@ -17,15 +17,9 @@
                         <h4 class="card-title">[[${titulo}]]</h4>
                     </div>
                     <div class="card-body">
-                        <form th:action="@{/generar-grupos}" class="row" method="post">
-                            <div class="col-12 ms-2 mt-2 form-check form-switch" th:each=" pe : ${programasEducativosList}">
-                                <input type="checkbox" th:name="${pe.getNombreCorto()}" th:id="${pe.getNombreCorto()}"
-                                    class="form-check-input" role="switch" th:value="${pe.getIdProgramaEducativo()}" checked>
-                                <label for="${pe.getNombreCorto()}" class="form-check-label"
-                                    th:text="${pe.getNombre()}"></label>
-                            </div>
+                        <form th:action="@{/generar-horario}" class="row mt-2" method="post">
                             <div class="col-12 ms-2 mt-2">
-                                <button type="submit" class="btn btn-primary me-3">Enviar</button>
+                                <button type="submit" class="btn btn-primary me-3">Empezar</button>
                                 <a th:href="@{/}" class="btn btn-secondary">Cancelar</a>
                             </div>
                         </form>

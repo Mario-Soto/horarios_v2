@@ -1,6 +1,7 @@
 package edu.uaeh.horarios2.service.implementaciones;
 
 import java.util.List;
+import java.util.ArrayList;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -83,4 +84,18 @@ public class GrupoServiceImpl implements GrupoService{
         return (List<Grupo>) grupoDAO.findAllByProgramaEducativo(programaEducativo);
     }
     
+    @Override
+    @Transactional(readOnly = true)
+    public List<ProgramaEducativo> getProgramasEducativos(){
+        List<Grupo> grupos = this.getGrupos();
+        List<ProgramaEducativo> programasEducativos = new ArrayList<>();
+
+        for(Grupo grupo : grupos){
+            if(!programasEducativos.contains(grupo.getProgramaEducativo())){
+                programasEducativos.add(grupo.getProgramaEducativo());
+            }
+        }
+
+        return programasEducativos;
+    }
 }
