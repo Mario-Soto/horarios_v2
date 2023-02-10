@@ -155,7 +155,7 @@ public class HorariosService {
     }
 
     public void eliminarClases(ProgramaEducativo programaEducativo) {
-        List<Grupo> grupos = grupoService.getGrupos();
+        List<Grupo> grupos = grupoService.getGruposPorProgramaEducativo(programaEducativo);
 
         grupos.forEach(grupo -> {
             List<MateriaExtra> materiasExtra = materiaExtraService.getMateriasExtras(grupo);

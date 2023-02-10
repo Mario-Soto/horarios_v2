@@ -13,6 +13,8 @@ import org.springframework.web.bind.annotation.RestController;
 import edu.uaeh.horarios2.domain.Grupo;
 import edu.uaeh.horarios2.domain.catalogos.AreaPropedeutica;
 import edu.uaeh.horarios2.domain.catalogos.MateriaPropedeutico;
+import edu.uaeh.horarios2.generacionHorarios.Generacion;
+import edu.uaeh.horarios2.generacionHorarios.GeneracionService;
 import edu.uaeh.horarios2.service.AreaPropedeuticaService;
 import edu.uaeh.horarios2.service.GrupoService;
 import edu.uaeh.horarios2.service.MateriaPropedeuticoService;
@@ -28,6 +30,8 @@ public class Peticiones {
     GrupoService grupoService;
     @Autowired
     AreaPropedeuticaService areaPropedeuticaService;
+    @Autowired
+    GeneracionService generacionService;
 
     @GetMapping(value = "/propedeuticos/{idGrupo}/{idAreaPropedeutica}", produces = "application/json")
     public Map<String, Object> propedeuticosArea(Grupo grupo, AreaPropedeutica area){
@@ -50,7 +54,7 @@ public class Peticiones {
     }
 
     @GetMapping("/prueba")
-    public AreaPropedeutica prueba(){
-        return areaPropedeuticaService.getAreasPropedeuticas().get(0);
+    public HashMap<Long,Integer[]> prueba(){
+        return generacionService.disponibilidadGrupos(new Generacion());
     }
 }

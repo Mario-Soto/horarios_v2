@@ -11,6 +11,7 @@ import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import lombok.Data;
+import lombok.ToString.Exclude;
 
 @Data
 @Entity
@@ -21,10 +22,11 @@ public class Disponibilidad implements Serializable{
     private Long idDisponibilidad;
     @ManyToOne
     @JoinColumn(name = "docente")
+    @Exclude
     private Docente docente;
     @ManyToOne
-    @JoinColumn(name = "timeslot")
+    @JoinColumn(name = "slot")
     private Timeslot slot;
-    private Boolean estatus;
+    private Integer estatus;
 
 }
