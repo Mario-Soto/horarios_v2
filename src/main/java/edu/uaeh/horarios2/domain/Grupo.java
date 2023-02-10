@@ -49,6 +49,16 @@ public class Grupo implements Serializable {
     private List<MateriaExtra> materiaExtras;
 
 
+    public List<Materia> getMateriasDestino(Materia origen){
+        List<Materia> result = new ArrayList<>();
+        for(MateriaExtra materia : this.materiaExtras){
+            if(materia.getMateriaOrigen().equals(origen)){
+                result.add(materia.getMateria());
+            }
+        }
+        return result;
+    }
+
     public Materia getMateriaDestino(Materia origen){
         for(MateriaExtra materia : this.materiaExtras){
             if(materia.getMateriaOrigen().equals(origen)){

@@ -16,6 +16,9 @@ import edu.uaeh.horarios2.domain.Grupo;
 import edu.uaeh.horarios2.domain.Materia;
 import edu.uaeh.horarios2.domain.catalogos.AreaPropedeutica;
 import edu.uaeh.horarios2.domain.catalogos.ProgramaEducativo;
+import edu.uaeh.horarios2.GA.Inicializa;
+import edu.uaeh.horarios2.GA.Timetable;
+import edu.uaeh.horarios2.GA.Services.TimetableService;
 import edu.uaeh.horarios2.service.ProgramaEducativoService;
 import edu.uaeh.horarios2.service.AreaPropedeuticaService;
 import edu.uaeh.horarios2.service.GrupoService;
@@ -39,6 +42,10 @@ public class Horarios {
     AreaPropedeuticaService areaPropedeuticaService;
     @Autowired
     MateriaService materiaService;
+    @Autowired
+    Inicializa inicializa;
+    @Autowired
+    TimetableService timetableService;
 
     @Autowired
     GrupoService grupoService;
@@ -146,7 +153,7 @@ public class Horarios {
         horariosService.generaClases(programaEducativo, formData);
         programasEducativos.remove(programaEducativo.getIdProgramaEducativo());
         if (programasEducativos.isEmpty()) {
-            return "redirect:/generar-grupos";
+            return "redirect:/generar-horario";
         }
         List<Long> peKeys = new ArrayList<>(programasEducativos.keySet());
         return "redirect:/generar-materias/programa-educativo/"
@@ -157,5 +164,19 @@ public class Horarios {
     public String generarHorario(Model model){
         model.addAttribute("titulo", "Generar horario");
         return "generacion/empezar";
+    }
+
+    @PostMapping("/generar-horario")
+    public String generarHorarioEmpezar(Model model){
+        Timetable timetable = timetableService.timetable();
+        timetableService.generarSesiones(timetable);
+        inicializa.inicioGA();
+        return "redirect:/iniciar";
+    }
+
+    @GetMapping("/iniciar")
+    public String iniciarHorario(Model model){
+        
+        return "redirect:/";
     }
 }

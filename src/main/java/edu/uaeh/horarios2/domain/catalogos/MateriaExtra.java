@@ -3,6 +3,7 @@ package edu.uaeh.horarios2.domain.catalogos;
 import java.io.Serializable;
 
 import edu.uaeh.horarios2.domain.Materia;
+import edu.uaeh.horarios2.domain.Docente;
 import edu.uaeh.horarios2.domain.Grupo;
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
@@ -28,4 +29,7 @@ public class MateriaExtra implements Serializable{
     @ManyToOne
     @JoinColumn(name = "materia")
     private Materia materia;
+    @ManyToOne
+    @JoinColumn(name = "docente")
+    private Docente docente;
 }
