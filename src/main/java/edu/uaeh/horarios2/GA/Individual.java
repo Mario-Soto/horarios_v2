@@ -13,7 +13,7 @@ import edu.uaeh.horarios2.domain.catalogos.MateriaExtra;
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
-public class Individual {
+public class Individual{
 
     private int[] chromosome;
     private double fitness = -1;
