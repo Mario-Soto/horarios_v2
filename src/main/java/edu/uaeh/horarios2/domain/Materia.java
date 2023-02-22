@@ -69,4 +69,12 @@ public class Materia implements Serializable{
     public Boolean esIdiomas(){
         return this.getTipoMateria().getTipo().equals("Idiomas");
     }
+
+    public Boolean esMateriaRelacionadaUno(){
+        return this.getMateria().contains("PROPEDÉUTICA") || this.getMateria().contains("IDIOMA");
+    }
+
+    public Boolean esMateriaRelacionadaDos(){
+        return this.getMateria().contains("OPTATIVA");
+    }
 }

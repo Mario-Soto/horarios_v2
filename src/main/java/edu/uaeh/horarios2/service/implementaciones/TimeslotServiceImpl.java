@@ -89,4 +89,9 @@ public class TimeslotServiceImpl implements TimeslotService {
         dias.add(7);
         return (List<Timeslot>) timeslotDAO.findAllByDiaInAndHoraInicio(dias, 7);
     }
+
+    @Override
+    public Timeslot getTimeslot(Integer dia, Integer horaInicio){
+        return timeslotDAO.findByDiaAndHoraInicio(dia, horaInicio).orElse(null);
+    }
 }

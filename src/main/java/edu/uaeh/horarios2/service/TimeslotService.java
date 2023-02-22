@@ -17,6 +17,8 @@ public interface TimeslotService {
 
     public Timeslot getTimeslot(Integer idTimeslot);
 
+    public Timeslot getTimeslot(Integer dia, Integer horaInicio);
+
     public List<Timeslot> getTimeslotsMatutinos();
 
     public List<Timeslot> getTimeslotsVespertinos();

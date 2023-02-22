@@ -11,6 +11,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import edu.uaeh.horarios2.domain.Grupo;
+import edu.uaeh.horarios2.domain.Clase;
 import edu.uaeh.horarios2.domain.catalogos.AreaPropedeutica;
 import edu.uaeh.horarios2.domain.catalogos.MateriaPropedeutico;
 import edu.uaeh.horarios2.generacionHorarios.Generacion;
@@ -54,7 +55,15 @@ public class Peticiones {
     }
 
     @GetMapping("/prueba")
-    public HashMap<Long,Integer[]> prueba(){
-        return generacionService.disponibilidadGrupos(new Generacion());
+    public HashMap<Long, HashMap<Integer, Integer[]>> prueba(){
+        Integer[][] datos = {{0,1,2,3,4,5,6,7,8,9,10,11,12,13,14},{0,1,2,3,4,5,6,7,8,9,10,11,12,13,14},{0,1,2,3,4,5,6,7,8,9,10,11,12,13,14},{0,1,2,3,4,5,6,7,8,9,10,11,12,13,14},{0,1,2,3,4,5,6,7,8,9,10,11,12,13,14}};
+        generacionService.quitarFilasHoras(datos, 2);
+        generacionService.quitarColumnasDias(datos, 3);
+        return generacionService.datosGrupos(new Generacion());
+    }
+
+    @GetMapping("/prueba2")
+    public HashMap<Long, List<Long>> prueba2(){
+        return generacionService.asignarDocentes(new Generacion());
     }
 }

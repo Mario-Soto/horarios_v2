@@ -146,7 +146,7 @@ public class Horarios {
         horariosService.generaClases(programaEducativo, formData);
         programasEducativos.remove(programaEducativo.getIdProgramaEducativo());
         if (programasEducativos.isEmpty()) {
-            return "redirect:/generar-grupos";
+            return "redirect:/generar-horario";
         }
         List<Long> peKeys = new ArrayList<>(programasEducativos.keySet());
         return "redirect:/generar-materias/programa-educativo/"
@@ -157,5 +157,11 @@ public class Horarios {
     public String generarHorario(Model model){
         model.addAttribute("titulo", "Generar horario");
         return "generacion/empezar";
+    }
+
+    @PostMapping("/generar-horario")
+    public String crearHorario(Model model){
+        horariosService.generarSesiones();
+        return "redirect:/";
     }
 }

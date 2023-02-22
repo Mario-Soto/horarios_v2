@@ -39,6 +39,9 @@ public class Docente implements Serializable {
     @NotNull
     @Digits(integer = 6, fraction = 0)
     private Integer numeroEmpleado;
+    @NotNull
+    @Digits(integer = 2, fraction = 0)
+    private Integer horasPermitidas = 40;
     private Integer estatus = 1;
 
     @OneToMany(mappedBy = "docente")

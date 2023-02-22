@@ -80,7 +80,7 @@ public class Grupo implements Serializable {
     public Integer getHorasSemana() {
         Integer horas = 0;
         for (Clase clase : this.getClases()) {
-            if (clase.getMateria().getTipoMateria().getIdTipoMateria().equals(Long.valueOf(1))) {
+            if(!clase.esPracticasOServicio()){
                 horas += clase.getMateria().getHorasSemana();
             }
         }
@@ -89,7 +89,9 @@ public class Grupo implements Serializable {
 
     public Integer getDiasSemana() {
         Integer horasSemana = this.getHorasSemana();
-        if (horasSemana <= 10) {
+        if(horasSemana <= 2){
+            return 1;
+        } else if (horasSemana <= 10) {
             return 2;
         } else if (horasSemana <= 15) {
             return 3;
@@ -102,10 +104,12 @@ public class Grupo implements Serializable {
 
     public Integer[] getHorasPermitidas() {
         Integer[] horasPermitidas = new Integer[2];
-        if (this.getHorasSemana() % this.getDiasSemana() == 0) {
-            horasPermitidas[1] = (int) Math.ceil((this.getHorasSemana() + 1) / (this.getDiasSemana() + 0.0));
+        Integer horas = this.getHorasSemana();
+        Integer dias = this.getDiasSemana();
+        if (horas % dias == 0) {
+            horasPermitidas[1] = (int) Math.ceil((horas + 1) / (dias + 0.0));
         }else{
-            horasPermitidas[1] = (int) Math.ceil(this.getHorasSemana() / (this.getDiasSemana() + 0.0));
+            horasPermitidas[1] = (int) Math.ceil(horas / (dias + 0.0));
         }
         horasPermitidas[0] = horasPermitidas[1] - 2;
 

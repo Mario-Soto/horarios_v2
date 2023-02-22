@@ -10,5 +10,6 @@ import java.util.HashMap;
 @Component
 public class Generacion {
     private HashMap<Long, Integer[][]> disponibilidadDocentes;
-
+    private HashMap<Long, HashMap<Integer, Integer[]>> datosGrupos;
+    private HashMap<Long, Integer[][]> disponibilidadGrupos;
 }
