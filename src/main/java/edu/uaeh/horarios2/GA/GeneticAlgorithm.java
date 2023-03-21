@@ -1,22 +1,33 @@
 package edu.uaeh.horarios2.GA;
 
+import java.util.concurrent.CountDownLatch;
 
-public class GeneticAlgorithm {
+import lombok.extern.slf4j.Slf4j;
+
+@Slf4j
+public class GeneticAlgorithm implements Runnable{
+	private CountDownLatch controller;
 
 	private int populationSize;
 	private double mutationRate;
 	private double crossoverRate;
 	private int elitismCount;
 	protected int tournamentSize;
+	private double fit;
+
+	public void addFit(double valor){
+		this.fit += valor;
+		controller.countDown();
+	}
 
 	public GeneticAlgorithm(int populationSize, double mutationRate, double crossoverRate, int elitismCount,
 			int tournamentSize) {
-
 		this.populationSize = populationSize;
 		this.mutationRate = mutationRate;
 		this.crossoverRate = crossoverRate;
 		this.elitismCount = elitismCount;
 		this.tournamentSize = tournamentSize;
+		this.fit = 0;
 	}
 
 	public Population initPopulation(Timetable timetable) {
@@ -49,15 +60,16 @@ public class GeneticAlgorithm {
 	}
 
 	public void evalPopulation(Population population, Timetable timetable) {
-		double populationFitness = 0;
-
+		this.fit = 0;
+		controller = new CountDownLatch(this.populationSize);
 		// Loop over population evaluating individuals and summing population
 		// fitness
+		
 		for (Individual individual : population.getIndividuals()) {
-			populationFitness += this.calcFitness(individual, timetable);
+			ParallelProcess paralelo = new ParallelProcess(timetable, individual, this);
+			Thread t = new Thread(paralelo);
+			t.start();
 		}
-
-		population.setPopulationFitness(populationFitness);
 	}
 
 	public Individual selectParent(Population population) {
@@ -141,6 +153,17 @@ public class GeneticAlgorithm {
 		}
 
 		return newPopulation;
+	}
+
+	@Override
+	public void run() {
+		// TODO Auto-generated method stub
+		log.info("Inicia la evaluación");
+		try{
+			controller.await();
+		}catch(InterruptedException e){
+			e.printStackTrace();
+		}
 	}
 
 
