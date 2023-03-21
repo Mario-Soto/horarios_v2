@@ -66,4 +66,14 @@ public class Peticiones {
     public HashMap<Long, List<Long>> prueba2(){
         return generacionService.asignarDocentes(new Generacion());
     }
+
+    @GetMapping("/prueba3")
+    public HashMap<Long,HashMap<Integer, List<Integer>>> prueba3(){
+        return generacionService.generarDisponibilidadesGrupos(new Generacion());
+    }
+
+    @GetMapping("/prueba4")
+    public void prueba4(){
+        // return generacionService.generarDisponibilidadesDocentes(new Generacion());
+    }
 }

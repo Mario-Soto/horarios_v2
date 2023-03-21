@@ -11,4 +11,5 @@ public interface GrupoDAO extends CrudRepository<Grupo, Long>{
     Iterable<Grupo> findAllByProgramaEducativo(ProgramaEducativo programaEducativo);
     Iterable<Grupo> findAllByTurno(Integer turno);
     Optional<Grupo> findByProgramaEducativoAndSemestreAndGrupo(ProgramaEducativo pe, Integer semestre, Integer grupo);
+    Iterable<Grupo> findAllByProgramaEducativoAndSemestre(ProgramaEducativo pe, Integer semestre);
 }

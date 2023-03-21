@@ -71,4 +71,11 @@ public class Docentes {
         return "docentes/form";
     }
 
+    @GetMapping("/docentes/{idDocente}")
+    public String verDocente(Docente docente, Model model){
+        docente = docenteService.getDocente(docente.getIdDocente());
+        model.addAttribute("docente", docente);
+        model.addAttribute("titulo", "Información docente");
+        return "docentes/ver";
+    }
 }
