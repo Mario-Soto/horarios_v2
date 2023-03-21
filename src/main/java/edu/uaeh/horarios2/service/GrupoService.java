@@ -28,5 +28,7 @@ public interface GrupoService {
 
     public List<Grupo> getGruposPorProgramaEducativo(ProgramaEducativo programaEducativo);
 
+    public List<Grupo> getGruposPorSemestre(ProgramaEducativo programaEducativo, Integer semestre);
+
     public List<ProgramaEducativo> getProgramasEducativos();
 }

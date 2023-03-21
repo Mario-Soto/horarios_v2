@@ -62,6 +62,12 @@ public class GrupoServiceImpl implements GrupoService{
 
     @Override
     @Transactional(readOnly = true)
+    public List<Grupo> getGruposPorSemestre(ProgramaEducativo programaEducativo, Integer semestre) {
+        return (List<Grupo>) grupoDAO.findAllByProgramaEducativoAndSemestre(programaEducativo, semestre);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
     public List<Grupo> getGruposPorTurno(Integer turno) {
         return (List<Grupo>) grupoDAO.findAllByTurno(turno);
     }

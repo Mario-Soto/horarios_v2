@@ -4,15 +4,20 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
+import java.util.stream.Collectors;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import edu.uaeh.horarios2.domain.Materia;
+import edu.uaeh.horarios2.domain.catalogos.ProgramaEducativo;
 import edu.uaeh.horarios2.domain.Clase;
+import edu.uaeh.horarios2.domain.Docente;
+import edu.uaeh.horarios2.domain.Grupo;
 import edu.uaeh.horarios2.service.ClaseService;
 import edu.uaeh.horarios2.service.DocenteService;
 import edu.uaeh.horarios2.service.GrupoService;
+import edu.uaeh.horarios2.service.ProgramaEducativoService;
 import edu.uaeh.horarios2.service.SesionService;
 import lombok.extern.slf4j.Slf4j;
 
@@ -28,6 +33,8 @@ public class GeneracionService {
     private ClaseService claseService;
     @Autowired
     private SesionService sesionService;
+    @Autowired
+    private ProgramaEducativoService programaEducativoService;
 
     public HashMap<Long, Integer[][]> disponibilidadDocentes(Generacion generacionHorarios) {
         HashMap<Long, Integer[][]> disponibilidades = new HashMap<>();
@@ -41,13 +48,13 @@ public class GeneracionService {
                 disponibilidades.put(docente.getIdDocente(), disponibilidadDocente);
             }
         });
-        generacionHorarios.setDisponibilidadDocentes(disponibilidades);
+        generacionHorarios.setEstructuraDisponibilidadDocentes(disponibilidades);
         return disponibilidades;
     }
 
     /*
      * 0 -> dias disponibles
-     * 1 -> horas permitidas [0] -> minimas [1] -> maximas
+     * 1 -> horas permitidas: [0] -> minimas [1] -> maximas
      */
     public HashMap<Long, HashMap<Integer, Integer[]>> datosGrupos(Generacion generacion) {
         HashMap<Long, HashMap<Integer, Integer[]>> disponibilidades = new HashMap<>();
@@ -95,7 +102,7 @@ public class GeneracionService {
             }
             disponibilidades.put(grupo.getIdGrupo(), disponibilidadGrupo);
         });
-        generacion.setDisponibilidadGrupos(disponibilidades);
+        generacion.setEstructuraDisponibilidadGrupos(disponibilidades);
         return disponibilidades;
     }
 
@@ -203,7 +210,7 @@ public class GeneracionService {
                     break;
             }
         });
-        generacion.setDisponibilidadGrupos(disponibilidades);
+        generacion.setEstructuraDisponibilidadGrupos(disponibilidades);
         return disponibilidades;
     }
 
@@ -222,7 +229,6 @@ public class GeneracionService {
     public HashMap<Long, List<Long>> asignarDocentes(Generacion generacion){
         HashMap<Long, Integer> horasSemanaDocente = new HashMap<>();
         HashMap<Long, List<Long>> clasesImpartidas = new HashMap<>();
-        HashMap<Long, HashMap<String, List<Object>>> datos = new HashMap<>();
 
         List<Clase> clases = claseService.getClases();
 
@@ -241,6 +247,7 @@ public class GeneracionService {
         });
 
         clases.forEach(clase -> {
+            log.info("Clase: "+clase.getMateria().getMateria());
             boolean indicador = false;
             Long idDocente = Long.valueOf(0);
             Integer horas = 0;
@@ -312,6 +319,67 @@ public class GeneracionService {
             }
         });
 
+        generacion.setClasesImpartidasPorDocentes(clasesImpartidas);
+        this.guardarClasesGeneradas(generacion);
         return clasesImpartidas;
+    }
+
+    public void guardarClasesGeneradas(Generacion generacion){
+        generacion.getClasesImpartidasPorDocentes().keySet().forEach(key -> {
+            Docente docente = docenteService.getDocente(key);
+            generacion.getClasesImpartidasPorDocentes().get(key).forEach(idClase -> {
+                Clase clase = claseService.getClase(idClase);
+                clase.setDocente(docente);
+                claseService.guardar(clase);
+            });
+        });
+    }
+
+    public HashMap<Long,HashMap<Integer, List<Integer>>> generarDisponibilidadesGrupos(Generacion generacion){
+        HashMap<Long,HashMap<Integer, List<Integer>>> disponibilidadGrupos = new HashMap<>();
+        this.ajustarDisponibilidadGrupos(generacion);
+        generacion.getEstructuraDisponibilidadGrupos().keySet().forEach(key -> {
+            HashMap<Integer, List<Integer>> disponibilidades = new HashMap<>();
+            for(int i = 0; i < 5; i++){
+                List<Integer> lista = new ArrayList<>();
+                for(int j = 0; j < 14; j++){
+                    if(generacion.getEstructuraDisponibilidadGrupos().get(key)[i][j] == 1){
+                        lista.add(j);
+                    }
+                }
+                if(!lista.isEmpty()){
+                    disponibilidades.put(i, lista);
+                }
+            }
+            disponibilidadGrupos.put(key, disponibilidades);
+        });
+        
+        generacion.setDisponibilidadGrupos(disponibilidadGrupos);
+        return disponibilidadGrupos;
+    }
+
+    public void asignarClases(Generacion generacion){
+        grupoService.getGrupos().forEach(grupo -> {
+            if(!grupo.getProgramaEducativo().getNombreCorto().equals("Bach")){
+                grupo.getClases().forEach(clase -> {
+                    
+                });
+            }
+        });
+    }
+
+    public void asignarPropedeuticos(){
+        final ProgramaEducativo PROGRAMA = programaEducativoService.getProgramaEducativoPorNombreCorto("Bach");
+        List<Grupo> grupos4 = grupoService.getGruposPorSemestre(PROGRAMA, 4);
+        List<Grupo> grupos5 = grupoService.getGruposPorSemestre(PROGRAMA, 5);
+        List<Grupo> grupos6 = grupoService.getGruposPorSemestre(PROGRAMA, 6);
+        int cantidadGrupos4 = grupos4.size();
+        int cantidadGrupos5 = grupos5.size();
+
+        if ( cantidadGrupos4 > cantidadGrupos5){
+            // GRUPOS DE 5 SE VAN A 13-15
+        }else{
+            // GRUPOS DE 4 y 6 SE VAN A 13-15
+        }
     }
 }
