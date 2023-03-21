@@ -9,6 +9,7 @@ import java.util.List;
 
 import edu.uaeh.horarios2.domain.Clase;
 import edu.uaeh.horarios2.domain.Materia;
+import edu.uaeh.horarios2.domain.Sesion;
 import edu.uaeh.horarios2.domain.Grupo;
 import edu.uaeh.horarios2.domain.catalogos.AreaPropedeutica;
 import edu.uaeh.horarios2.domain.catalogos.GrupoPropedeutico;
@@ -33,6 +34,8 @@ public class HorariosService {
     GrupoPropedeuticoService grupoPropedeuticoService;
     @Autowired
     MateriaPropedeuticoService materiaPropedeuticoService;
+    @Autowired
+    SesionService sesionService;
 
     public void generaGrupos(ProgramaEducativo programaEducativo, MultiValueMap<String, String> params) {
         this.eliminarGrupos(programaEducativo);
@@ -170,6 +173,48 @@ public class HorariosService {
             grupo.getClases().forEach(clase -> {
                 claseService.eliminar(clase);
             });
+        });
+    }
+
+    public void generarSesiones(){
+        this.eliminarSesiones();
+        List<Clase> clases = claseService.getClases();
+        clases.forEach(clase ->{
+            Integer duracion = clase.getMateria().getHorasSemana();
+            while(duracion > 0){
+                Sesion sesion = new Sesion();
+                sesion.setClase(clase);
+                if(clase.esPracticasProfesionales()){
+                    if (duracion > 15) {
+                        sesion.setDuracion(15);
+                        duracion -= 15;
+                    } else {
+                        sesion.setDuracion(duracion);
+                        duracion = 0;
+                    }
+                }else if(clase.esServicioSocial()){
+                    sesion.setDuracion(10);
+                    duracion -= 10;
+                }else{
+                    if(duracion == 7 || (clase.getMateria().getMateria().contains("OPTATIVA") && duracion % 2 == 1)){
+                        sesion.setDuracion(3);
+                        duracion -= 3;
+                    }else if (duracion >= 2) {
+                        sesion.setDuracion(2);
+                        duracion -= 2;
+                    } else {
+                        sesion.setDuracion(1);
+                        duracion--;
+                    }
+                }
+                sesionService.guardar(sesion);
+            }
+        });
+    }
+
+    public void eliminarSesiones(){
+        sesionService.getSesiones().forEach(sesion -> {
+            sesionService.eliminar(sesion);
         });
     }
 }
