@@ -176,7 +176,7 @@ public class Horarios {
 
     @GetMapping("/iniciar")
     public String iniciarHorario(Model model){
-        
+        inicializa.inicioGA();
         return "redirect:/";
     }
 }

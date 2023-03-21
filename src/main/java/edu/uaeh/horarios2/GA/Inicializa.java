@@ -39,7 +39,7 @@ public class Inicializa {
         ga.evalPopulation(population, timetable);
         int generation = 1;
 
-        while (!ga.isTerminationConditionMet(generation, 1000) && !ga.isTerminationConditionMet(population)) {
+        while (!ga.isTerminationConditionMet(generation, 3000) && !ga.isTerminationConditionMet(population)) {
             if (generation % 500 == 0) {
                 log.info("Generation: " + generation + " Fittest: " + population.getFittest(0).getFitness());
             }
