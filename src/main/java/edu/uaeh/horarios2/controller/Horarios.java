@@ -16,13 +16,14 @@ import edu.uaeh.horarios2.domain.Grupo;
 import edu.uaeh.horarios2.domain.Materia;
 import edu.uaeh.horarios2.domain.catalogos.AreaPropedeutica;
 import edu.uaeh.horarios2.domain.catalogos.ProgramaEducativo;
+import edu.uaeh.horarios2.generacionHorarios.GeneracionService;
 import edu.uaeh.horarios2.GA.Inicializa;
 import edu.uaeh.horarios2.GA.Timetable;
+import edu.uaeh.horarios2.GA.Services.HorariosService;
 import edu.uaeh.horarios2.GA.Services.TimetableService;
 import edu.uaeh.horarios2.service.ProgramaEducativoService;
 import edu.uaeh.horarios2.service.AreaPropedeuticaService;
 import edu.uaeh.horarios2.service.GrupoService;
-import edu.uaeh.horarios2.service.HorariosService;
 import edu.uaeh.horarios2.service.MateriaService;
 import lombok.extern.slf4j.Slf4j;
 
@@ -46,6 +47,8 @@ public class Horarios {
     Inicializa inicializa;
     @Autowired
     TimetableService timetableService;
+    @Autowired
+    GeneracionService generacionService;
 
     @Autowired
     GrupoService grupoService;
@@ -168,9 +171,10 @@ public class Horarios {
 
     @PostMapping("/generar-horario")
     public String generarHorarioEmpezar(Model model){
-        Timetable timetable = timetableService.timetable();
-        timetableService.generarSesiones(timetable);
-        inicializa.inicioGA();
+        horariosService.generarSesiones();
+        horariosService.asignarDocentes();
+        generacionService.asignarHorasGrupo();
+        //inicializa.inicioGA();
         return "redirect:/iniciar";
     }
 

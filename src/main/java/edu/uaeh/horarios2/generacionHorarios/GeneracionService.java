@@ -10,6 +10,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import edu.uaeh.horarios2.domain.Materia;
+import edu.uaeh.horarios2.domain.Timeslot;
 import edu.uaeh.horarios2.domain.catalogos.ProgramaEducativo;
 import edu.uaeh.horarios2.domain.Clase;
 import edu.uaeh.horarios2.domain.Docente;
@@ -19,6 +20,7 @@ import edu.uaeh.horarios2.service.DocenteService;
 import edu.uaeh.horarios2.service.GrupoService;
 import edu.uaeh.horarios2.service.ProgramaEducativoService;
 import edu.uaeh.horarios2.service.SesionService;
+import edu.uaeh.horarios2.service.TimeslotService;
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
@@ -35,6 +37,8 @@ public class GeneracionService {
     private SesionService sesionService;
     @Autowired
     private ProgramaEducativoService programaEducativoService;
+    @Autowired
+    private TimeslotService timeslotService;
 
     public HashMap<Long, Integer[][]> disponibilidadDocentes(Generacion generacionHorarios) {
         HashMap<Long, Integer[][]> disponibilidades = new HashMap<>();
@@ -226,23 +230,14 @@ public class GeneracionService {
         }
     }
 
-    public HashMap<Long, List<Long>> asignarDocentes(Generacion generacion){
+    public void asignarDocentes(Generacion generacion){
         HashMap<Long, Integer> horasSemanaDocente = new HashMap<>();
-        HashMap<Long, List<Long>> clasesImpartidas = new HashMap<>();
 
         List<Clase> clases = claseService.getClases();
 
         clases.sort((c1, c2) -> {
-            int doc1 = c1.getMateria().getAsignaciones().size();
-            int doc2 = c2.getMateria().getAsignaciones().size();
-            
-            if(c1.getMateria().esMateriaRelacionadaUno()){
-                doc1 = c1.getGrupo().getMateriaDestino(c1.getMateria()).getAsignaciones().size();
-            }
-            if(c2.getMateria().esMateriaRelacionadaUno()){
-                doc2 = c2.getGrupo().getMateriaDestino(c2.getMateria()).getAsignaciones().size();
-            }
-
+            int doc1 = c1.getMateriaFinal().getAsignaciones().size();
+            int doc2 = c2.getMateriaFinal().getAsignaciones().size();
             return doc1 - doc2;
         });
 
@@ -262,44 +257,12 @@ public class GeneracionService {
                     idDocente = Long.valueOf(-1);
                     break;
                 }
-                if(clase.getMateria().esMateriaRelacionadaUno()){
-                    idDocente = clase.getGrupo().getMateriaDestino(clase.getMateria()).getRandomDocentePermitido().getIdDocente();
-                }else if(clase.getMateria().esMateriaRelacionadaDos()){
-                    List<Materia> materiasExtras = new ArrayList<>();
-                    clase.getGrupo().getMateriaExtras().forEach(materiaExtra -> {
-                        if(materiaExtra.getMateriaOrigen().getIdMateria().equals(clase.getMateria().getIdMateria())){
-                            materiasExtras.add(materiaExtra.getMateria());
-                        }
-                    });
-                    
-                    materiasExtras.forEach(materia -> {
-                        Long id = materia.getRandomDocentePermitido().getIdDocente();
-                        Integer horasSem;
-                        if(horasSemanaDocente.get(id) == null){
-                            horasSem = materia.getHorasSemana();
-                        }else{
-                            horasSem = horasSemanaDocente.get(id) + materia.getHorasSemana();
-                        }
-
-                        horasSemanaDocente.put(id, horasSem);
-                        if(clasesImpartidas.get(id) == null){
-                            List<Long> lista = new ArrayList<>();
-                            lista.add(clase.getIdClase());
-                            clasesImpartidas.put(id, lista);
-                        }else{
-                            clasesImpartidas.get(id).add(clase.getIdClase());
-                        }
-                    });
-                    permitidoRegistrar = false;
-                    break;
-                }else{
-                    idDocente = clase.getMateria().getRandomDocentePermitido().getIdDocente();
-                }
+                idDocente = clase.getMateriaFinal().getRandomDocentePermitido().getIdDocente();
 
                 if( horasSemanaDocente.get(idDocente) == null ){
-                    horas = clase.getMateria().getHorasSemana();
+                    horas = clase.getMateriaFinal().getHorasSemana();
                 }else{
-                    horas = horasSemanaDocente.get(idDocente) + clase.getMateria().getHorasSemana();
+                    horas = horasSemanaDocente.get(idDocente) + clase.getMateriaFinal().getHorasSemana();
                     if(horas > docenteService.getDocente(idDocente).getHorasPermitidas()){
                         indicador = true;
                         contador++;
@@ -309,19 +272,10 @@ public class GeneracionService {
 
             if(permitidoRegistrar){
                 horasSemanaDocente.put(idDocente, horas);
-                if(clasesImpartidas.get(idDocente) == null){
-                    List<Long> lista = new ArrayList<>();
-                    lista.add(clase.getIdClase());
-                    clasesImpartidas.put(idDocente, lista);
-                }else{
-                    clasesImpartidas.get(idDocente).add(clase.getIdClase());
-                }
             }
         });
 
-        generacion.setClasesImpartidasPorDocentes(clasesImpartidas);
         this.guardarClasesGeneradas(generacion);
-        return clasesImpartidas;
     }
 
     public void guardarClasesGeneradas(Generacion generacion){
@@ -356,6 +310,39 @@ public class GeneracionService {
         
         generacion.setDisponibilidadGrupos(disponibilidadGrupos);
         return disponibilidadGrupos;
+    }
+
+    public HashMap<Long, List<Timeslot>> obtenerDisponibilidadesGrupos(){
+        HashMap<Long, List<Timeslot>> disponibilidades = new HashMap<>();
+        Generacion generacion = new Generacion();
+        this.generarDisponibilidadesGrupos(generacion);
+
+        generacion.getDisponibilidadGrupos().keySet().forEach(idGrupo -> {
+            List<Timeslot> lista = new ArrayList<>();
+            generacion.getDisponibilidadGrupos().get(idGrupo).keySet().forEach(dia -> {
+                generacion.getDisponibilidadGrupos().get(idGrupo).get(dia).forEach(hora -> {
+                    Timeslot timeslot = timeslotService.getTimeslot(dia + 1, hora + 7);
+                    lista.add(timeslot);
+                });
+            });
+            disponibilidades.put(idGrupo, lista);
+        });
+        return disponibilidades;
+    }
+
+    public void asignarHorasGrupo(){
+        HashMap<Long,HashMap<Integer, List<Integer>>> disponibilidadGrupos = this.generarDisponibilidadesGrupos(new Generacion());
+
+        disponibilidadGrupos.keySet().forEach(idGrupo -> {
+            List<Integer> horas = disponibilidadGrupos.get(idGrupo).get(disponibilidadGrupos.get(idGrupo).keySet().iterator().next());
+            horas.sort((h1, h2) -> h1 - h2);
+            Integer horaEntrada = horas.get(0) + 7;
+            Integer horaSalida = horas.get(horas.size() - 1) + 8;
+            Grupo grupo = grupoService.getGrupo(idGrupo);
+            grupo.setHoraEntrada(horaEntrada);
+            grupo.setHoraSalida(horaSalida);
+            grupoService.guardar(grupo);
+        });
     }
 
     public void asignarClases(Generacion generacion){

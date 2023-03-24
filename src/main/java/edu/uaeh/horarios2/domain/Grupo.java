@@ -36,6 +36,8 @@ public class Grupo implements Serializable {
     private Integer semestre;
     private Integer grupo;
     private Integer turno;
+    private Integer horaEntrada;
+    private Integer horaSalida;
     @OneToMany(mappedBy = "grupo", fetch = FetchType.EAGER)
     private List<Clase> clases;
     @ManyToOne

@@ -36,31 +36,34 @@ public class Clase implements Serializable{
     @ManyToOne
     @JoinColumn(name = "materia")
     private Materia materia;
+    @ManyToOne
+    @JoinColumn(name = "materia_final")
+    private Materia materiaFinal;
     @OneToMany(mappedBy = "clase")
     private List<Sesion> sesiones;
 
 
     public Boolean esPracticasOServicio(){
-        return this.getMateria().esPracticasOServicio();
+        return this.getMateriaFinal().esPracticasOServicio();
     }
 
     public Boolean esPracticasProfesionales(){
-        return this.getMateria().esPracticasProfesionales();
+        return this.getMateriaFinal().esPracticasProfesionales();
     }
 
     public Boolean esServicioSocial(){
-        return this.getMateria().esServicioSocial();
+        return this.getMateriaFinal().esServicioSocial();
     }
 
     public Boolean esOptativa(){
-        return this.getMateria().esOptativa();
+        return this.getMateriaFinal().esOptativa();
     }
 
     public Boolean esPropedeutica(){
-        return this.getMateria().esPropedeutica();
+        return this.getMateriaFinal().esPropedeutica();
     }
 
     public Boolean esIdiomas(){
-        return this.getMateria().esIdiomas();
+        return this.getMateriaFinal().esIdiomas();
     }
 }

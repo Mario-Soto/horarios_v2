@@ -1,10 +1,11 @@
-package edu.uaeh.horarios2.service;
+package edu.uaeh.horarios2.GA.Services;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.util.MultiValueMap;
 import lombok.extern.slf4j.Slf4j;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 
 import edu.uaeh.horarios2.domain.Clase;
@@ -13,8 +14,16 @@ import edu.uaeh.horarios2.domain.Sesion;
 import edu.uaeh.horarios2.domain.Grupo;
 import edu.uaeh.horarios2.domain.catalogos.AreaPropedeutica;
 import edu.uaeh.horarios2.domain.catalogos.GrupoPropedeutico;
-import edu.uaeh.horarios2.domain.catalogos.MateriaExtra;
 import edu.uaeh.horarios2.domain.catalogos.ProgramaEducativo;
+import edu.uaeh.horarios2.service.AreaPropedeuticaService;
+import edu.uaeh.horarios2.service.ClaseService;
+import edu.uaeh.horarios2.service.DocenteService;
+import edu.uaeh.horarios2.service.GrupoPropedeuticoService;
+import edu.uaeh.horarios2.service.GrupoService;
+import edu.uaeh.horarios2.service.MateriaExtraService;
+import edu.uaeh.horarios2.service.MateriaPropedeuticoService;
+import edu.uaeh.horarios2.service.MateriaService;
+import edu.uaeh.horarios2.service.SesionService;
 
 @Slf4j
 @Service
@@ -36,6 +45,8 @@ public class HorariosService {
     MateriaPropedeuticoService materiaPropedeuticoService;
     @Autowired
     SesionService sesionService;
+    @Autowired
+    DocenteService docenteService;
 
     public void generaGrupos(ProgramaEducativo programaEducativo, MultiValueMap<String, String> params) {
         this.eliminarGrupos(programaEducativo);
@@ -89,27 +100,19 @@ public class HorariosService {
                 params.get(key).forEach(val -> {
                     Long idMateria = Long.parseLong(val);
                     Materia materia = materiaService.getMateria(idMateria);
+                    Materia destino = materiaService.getMateria(idMateria);
                     if (materia.getMateria().contains("IDIOMA")) {
-                        MateriaExtra materiaExtra = new MateriaExtra();
-                        materiaExtra.setGrupo(grupo);
-                        materiaExtra.setMateriaOrigen(materia);
-                        Materia destino = materiaService.getMateria(Long.parseLong(params.get(key + "-idioma").get(0)));
-                        materiaExtra.setMateria(destino);
-                        materiaExtraService.guardar(materiaExtra);
+                        destino = materiaService.getMateria(Long.parseLong(params.get(key + "-idioma").get(0)));
                     } else if (materia.getMateria().contains("PROPEDÉUTICA")) {
-                        MateriaExtra materiaExtra = new MateriaExtra();
-                        materiaExtra.setGrupo(grupo);
-                        materiaExtra.setMateriaOrigen(materia);
                         AreaPropedeutica area = areaPropedeuticaService
                                 .getAreaPropedeutica(Long.parseLong(params.get(key + "-prope").get(0)));
-                        Materia destino = materiaPropedeuticoService.getMateriasPropedeuticos(area, materia)
+                        destino = materiaPropedeuticoService.getMateriasPropedeuticos(area, materia)
                                 .getMateria();
-                        materiaExtra.setMateria(destino);
-                        materiaExtraService.guardar(materiaExtra);
                     }
                     Clase clase = new Clase();
                     clase.setGrupo(grupo);
                     clase.setMateria(materia);
+                    clase.setMateriaFinal(destino);
                     claseService.guardar(clase);
                 });
             } else if (key.split("-")[2].contains("prope")) {
@@ -125,19 +128,13 @@ public class HorariosService {
                 Long idGrupo = Long.parseLong(key.split("-")[1]);
                 Grupo grupo = grupoService.getGrupo(idGrupo);
                 Materia origen = materiaService.getMateria(Long.parseLong(key.split("-")[3]));
-                Clase clase = new Clase();
-                clase.setGrupo(grupo);
-                clase.setMateria(origen);
-                claseService.guardar(clase);
-
                 params.get(key).forEach(val -> {
-                    MateriaExtra materiaExtra = new MateriaExtra();
+                    Clase clase = new Clase();
+                    clase.setGrupo(grupo);
+                    clase.setMateria(origen);
                     Materia destino = materiaService.getMateria(Long.parseLong(val));
-                    materiaExtra.setGrupo(grupo);
-                    materiaExtra.setMateriaOrigen(origen);
-                    materiaExtra.setMateria(destino);
-                    materiaExtra.setDocente(destino.getRandomDocentePermitido());
-                    materiaExtraService.guardar(materiaExtra);
+                    clase.setMateriaFinal(destino);
+                    claseService.guardar(clase);
                 });
             }
         });
@@ -145,13 +142,9 @@ public class HorariosService {
 
     public void eliminarClases() {
         List<Clase> clases = claseService.getClases();
-        List<MateriaExtra> materiaExtras = materiaExtraService.getMateriasExtras();
         List<GrupoPropedeutico> grupoPropedeuticos = grupoPropedeuticoService.getGruposPropedeuticos();
         clases.forEach(clase -> {
             claseService.eliminar(clase);
-        });
-        materiaExtras.forEach(materia -> {
-            materiaExtraService.eliminar(materia);
         });
         grupoPropedeuticos.forEach(grupo -> {
             grupoPropedeuticoService.eliminar(grupo);
@@ -162,10 +155,6 @@ public class HorariosService {
         List<Grupo> grupos = grupoService.getGruposPorProgramaEducativo(programaEducativo);
 
         grupos.forEach(grupo -> {
-            List<MateriaExtra> materiasExtra = materiaExtraService.getMateriasExtras(grupo);
-            materiasExtra.forEach(materia -> {
-                materiaExtraService.eliminar(materia);
-            });
             GrupoPropedeutico grupoPrope = grupoPropedeuticoService.getGrupoPropedeutico(grupo);
             if (grupoPrope != null) {
                 grupoPropedeuticoService.eliminar(grupoPrope);
@@ -215,6 +204,55 @@ public class HorariosService {
     public void eliminarSesiones(){
         sesionService.getSesiones().forEach(sesion -> {
             sesionService.eliminar(sesion);
+        });
+    }
+
+    public void asignarDocentes(){
+        HashMap<Long, Integer> horasSemanaDocente = new HashMap<>();
+
+        List<Clase> clases = claseService.getClases();
+
+        clases.sort((c1, c2) -> {
+            int doc1 = c1.getMateriaFinal().getAsignaciones().size();
+            int doc2 = c2.getMateriaFinal().getAsignaciones().size();
+            return doc1 - doc2;
+        });
+
+        clases.forEach(clase -> {
+            boolean indicador = false;
+            Long idDocente = Long.valueOf(0);
+            Integer horas = 0;
+            int contador = 0;
+            boolean permitidoRegistrar = true;
+            do{
+                indicador = false;
+                if(contador == 10){
+                    // log.info("No es posible obtener un docente");
+                    // log.info("Clase: "+clase.getIdClase()+" -> "+clase.getMateria().getMateria());
+                    permitidoRegistrar = false;
+                    idDocente = Long.valueOf(-1);
+                    break;
+                }
+                idDocente = clase.getMateriaFinal().getRandomDocentePermitido().getIdDocente();
+
+                if( horasSemanaDocente.get(idDocente) == null ){
+                    horas = clase.getMateriaFinal().getHorasSemana();
+                }else{
+                    horas = horasSemanaDocente.get(idDocente) + clase.getMateriaFinal().getHorasSemana();
+                    if(horas > docenteService.getDocente(idDocente).getHorasPermitidas()){
+                        indicador = true;
+                        contador++;
+                    }
+                }
+            }while(indicador);
+
+            if(permitidoRegistrar){
+                horasSemanaDocente.put(idDocente, horas);
+                clase.setDocente(docenteService.getDocente(idDocente));
+                claseService.guardar(clase);
+            }else{
+                log.info("No se pudo asignar docente a la clase: "+clase.getIdClase()+" -> "+clase.getMateria().getMateria());
+            }
         });
     }
 }

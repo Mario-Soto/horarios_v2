@@ -5,6 +5,7 @@ import java.util.List;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
+import edu.uaeh.horarios2.GA.Services.HorariosService;
 import edu.uaeh.horarios2.GA.Services.TimetableService;
 import edu.uaeh.horarios2.domain.Clase;
 import edu.uaeh.horarios2.domain.Sesion;
@@ -21,6 +22,8 @@ public class Inicializa {
     private SesionService sesionService;
     @Autowired
     private TimetableService timetableService;
+    @Autowired
+    private HorariosService horariosService;
     private Timetable timetable;
     private List<Clase> clases;
 
@@ -39,9 +42,9 @@ public class Inicializa {
         ga.evalPopulation(population, timetable);
         int generation = 1;
 
-        while (!ga.isTerminationConditionMet(generation, 3000) && !ga.isTerminationConditionMet(population)) {
+        while (!ga.isTerminationConditionMet(generation, 7000) && !ga.isTerminationConditionMet(population)) {
             if (generation % 500 == 0) {
-                log.info("Generation: " + generation + " Fittest: " + population.getFittest(0).getFitness());
+                log.info("Generation: " + generation + " Fittest: " + (1/population.getFittest(0).getFitness() - 1));
             }
 
             population = ga.crossoverPopulation(population);

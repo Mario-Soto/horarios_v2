@@ -3,6 +3,7 @@ package edu.uaeh.horarios2.GA;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
+import java.util.stream.Collectors;
 
 import edu.uaeh.horarios2.domain.Aula;
 import edu.uaeh.horarios2.domain.Clase;
@@ -14,6 +15,7 @@ import edu.uaeh.horarios2.domain.Timeslot;
 import edu.uaeh.horarios2.domain.catalogos.MateriaExtra;
 import edu.uaeh.horarios2.domain.catalogos.ProgramaEducativo;
 import edu.uaeh.horarios2.domain.catalogos.TipoMateria;
+import edu.uaeh.horarios2.generacionHorarios.Generacion;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -43,6 +45,7 @@ public class Timetable {
 	private Integer clashClaseALas7 = 0;
 	private Integer clashClaseALas18 = 0;
 	private Integer clashJornadaHomogeneaGrupos = 0;
+	private HashMap<Long, List<Timeslot>> disponibilidadGrupos;
 
 	public HashMap<Long, Aula> aulasMap() {
 		HashMap<Long, Aula> map = new HashMap<>();
@@ -81,18 +84,9 @@ public class Timetable {
 		this.materias = clonable.materias;
 		this.timeslotsPracticasProfesionales = clonable.timeslotsPracticasProfesionales;
 		this.timeslotsServicioSocial = clonable.timeslotsServicioSocial;
-		this.sesiones = new ArrayList<>();
-		this.clases = new ArrayList<>();
-		for (Sesion sesion : clonable.sesiones) {
-			if (!sesion.getClase().esOptativa()) {
-				this.sesiones.add(sesion);
-			}
-		}
-		for (Clase clase : clonable.clases) {
-			if (!clase.esOptativa()) {
-				this.clases.add(clase);
-			}
-		}
+		this.sesiones = clonable.sesiones;
+		this.clases = clonable.clases;
+		this.disponibilidadGrupos = clonable.disponibilidadGrupos;
 	}
 
 	public void addAula(Aula aula) {
@@ -195,45 +189,58 @@ public class Timetable {
 		return slots;
 	}
 
-	public Timeslot getRandomTimeslot(Grupo grupo, Docente docente) {
-		List<Timeslot> slots;
-		if (grupo.getTurno() == 1) {
-			if (docente != null && docente.esTiempoCompleto()) {
-				slots = this.getTimeslotsTCMatutinos();
-			} else {
-				slots = this.getTimeslotsMatutinos();
-			}
-		} else {
-			if (docente != null && docente.esTiempoCompleto()) {
-				slots = this.getTimeslotsTCVespertinos();
-			} else {
-				slots = this.getTimeslotsVespertinos();
+	private Boolean verificaSlotTiempoCompleto4738(Timeslot slot) {
+		if (slot.getHoraInicio() >= 9) {
+			return true;
+		}
+		return false;
+	}
+
+	private Boolean verificaSlotTiempoCompleto(Timeslot slot) {
+		if (slot.getHoraFin() <= 18) {
+			return true;
+		}
+		return false;
+	}
+
+	private Boolean verificaSlotFin(Timeslot slot, Integer duracion, Integer horaSalida) {
+		if (slot.getHoraInicio() + duracion <= horaSalida) {
+			return true;
+		}
+		return false;
+	}
+
+	public List<Timeslot> getTimeslotsDisponibles(Grupo grupo, Docente docente) {
+		List<Timeslot> slots = this.getDisponibilidadGrupos().get(grupo.getIdGrupo());
+
+		if (docente.esTiempoCompleto()) {
+			slots = slots.stream().filter(slot -> verificaSlotTiempoCompleto4738(slot)).collect(Collectors.toList());
+			if (docente.getTipoEmpleado().getTipo().contains("Tiempo Completo")) {
+				slots = slots.stream().filter(slot -> verificaSlotTiempoCompleto(slot)).collect(Collectors.toList());
 			}
 		}
-		// List<Timeslot> slotsPermitidos = new ArrayList<>();
-		// for (Timeslot slot : slots) {
-		// if (slot.getDia().equals(dia)) {
-		// slotsPermitidos.add(slot);
-		// }
-		// }
+
+		return slots;
+	}
+
+	public Timeslot getRandomTimeslot(Grupo grupo, Docente docente) {
+		List<Timeslot> slots = this.getTimeslotsDisponibles(grupo, docente);
 		return slots.get((int) (Math.random() * slots.size()));
 	}
 
-	public Timeslot getRandomTimeslotAntesDeLas8(Grupo grupo, Docente docente) {
-		Timeslot slot;
-		do {
-			slot = getRandomTimeslot(grupo, docente);
-		} while (slot.getHoraInicio() == 20);
-		return slot;
+	public Timeslot getRandomTimeslot(Grupo grupo, Docente docente, Integer duracion) {
+		List<Timeslot> slots = this.getTimeslotsDisponibles(grupo, docente);
+		slots = slots.stream().filter(slot -> verificaSlotFin(slot, duracion, grupo.getHoraSalida())).collect(Collectors.toList());
+		return slots.get((int) (Math.random() * slots.size()));
 	}
 
 	public Integer getNumeroSesiones() {
 		Integer sesiones = this.sesiones.size();
-		for (Sesion sesion : this.sesiones) {
-			if (sesion.getClase().esOptativa()) {
-				sesiones--;
-			}
-		}
+		// for (Sesion sesion : this.sesiones) {
+		// if (sesion.getClase().esOptativa()) {
+		// sesiones--;
+		// }
+		// }
 
 		return sesiones;
 	}
@@ -262,15 +269,15 @@ public class Timetable {
 	// */
 	public int calcClashes() {
 
-		clashUltimaClase = clashUltimaClase();
+		// clashUltimaClase = clashUltimaClase();
 		clashMismaHora = clashClaseMismaHora();
-		// clashAulaOcupada = clashAulaOcupada();
-		clashProfesorDisponible = clashProfesorDisponible();
-		clashSesionAlDia = clashSesionAlDia();
 		clashHorasMuertas = clashHorasMuertas();
 		clashClaseALas7 = clashClaseALas7();
-		clashClaseALas18 = clashClaseALas18();
-		clashJornadaHomogeneaGrupos = clashJornadaHomogeneaGrupos();
+		clashSesionAlDia = clashSesionAlDia();
+		clashProfesorDisponible = clashProfesorDisponible();
+		//clashJornadaHomogeneaGrupos = clashJornadasGrupos();
+		// clashAulaOcupada = clashAulaOcupada();
+		// clashClaseALas18 = clashClaseALas18();
 
 		clashes = clashAulaOcupada + clashMismaHora + clashProfesorDisponible + clashUltimaClase + clashSesionAlDia
 				+ clashHorasMuertas + clashClaseALas7 + clashClaseALas18 + clashJornadaHomogeneaGrupos;
@@ -280,13 +287,8 @@ public class Timetable {
 
 	private Integer clashUltimaClase() {
 		Integer clash = 0;
-		// this.getSesiones().forEach(sesion -> {
-		// 	if( sesion.getDuracion() <= 2 && sesion.getInicio().getHoraInicio() + sesion.getDuracion() > 21 ){
-		// 		clash += 5;
-		// 	}
-		// });
 		for (Sesion sesionA : this.getSesiones()) {
-			if (sesionA.getDuracion() <= 2) {
+			if (sesionA.getDuracion() <= 3) {
 				if (sesionA.getInicio().getHoraInicio() + sesionA.getDuracion() > 21) {
 					clash += 5;
 				}
@@ -300,118 +302,37 @@ public class Timetable {
 		for (Sesion sesionA : this.getSesiones()) {
 			// Check clases a la misma hora
 			for (Sesion sesionB : this.getSesiones()) {
-				if (sesionA.getClase().getGrupo().equals(sesionB.getClase().getGrupo())
-						&& sesionA.equalsInTime(sesionB) && sesionA.getIdSesion() != sesionB.getIdSesion()) {
-					clash += 5;
-					break;
-				}
-			}
-		}
-		return clash;
-	}
-
-	// private Integer clashAulaOcupada() {
-	// 	Integer clash = 0;
-	// 	for (Sesion sesionA : this.getSesiones()) {
-
-	// 		// Check if room is taken
-	// 		for (Sesion sesionB : this.getSesiones()) {
-	// 			if (!sesionA.getClase().esOptativa() && !sesionB.getClase().esOptativa()) {
-	// 				if (sesionA.getAula().equals(sesionB.getAula()) && sesionA.equalsInTime(sesionB)
-	// 						&& sesionA.getIdSesion() != sesionB.getIdSesion()) {
-	// 					clash++;
-	// 					break;
-	// 				}
-	// 			}
-	// 		}
-	// 	}
-	// 	return clash;
-	// }
-
-	private Integer clashProfesorDisponible() {
-		Integer clash = 0;
-		for (Sesion sesionA : this.getSesiones()) {
-			// Check if professor is available
-			for (Sesion sesionB : this.getSesiones()) {
-				if(sesionA.getClase().getDocente().getIdDocente() != -10 && sesionB.getClase().getDocente().getIdDocente() != -10){
-					if (sesionA.getClase().getDocente().equals(sesionB.getClase().getDocente())
-						&& sesionA.equalsInTime(sesionB) && sesionA.getIdSesion() != sesionB.getIdSesion()) {
-						clash += 5;
-						break;
-					}
-				}else{
-					if(sesionA.getIdSesion() != sesionB.getIdSesion()){
-						List<Docente> docA = new ArrayList<>();
-						List<Docente> docB = new ArrayList<>();
-						
-						if(sesionA.getClase().getDocente().getIdDocente() == -10){
-							List<MateriaExtra> extrasA = sesionA.getClase().getGrupo().getMateriaExtras();
-							for(MateriaExtra extra : extrasA){
-								docA.add(extra.getDocente());
-							}
-						}else{
-							docA.add(sesionA.getClase().getDocente());
-						}
-	
-						if(sesionB.getClase().getDocente().getIdDocente() == -10){
-							List<MateriaExtra> extrasB = sesionB.getClase().getGrupo().getMateriaExtras();
-							for(MateriaExtra extra : extrasB){
-								docB.add(extra.getDocente());
-							}
-						}else{
-							docB.add(sesionB.getClase().getDocente());
+				if (sesionA.getClase().getGrupo().getIdGrupo() == sesionB.getClase().getGrupo().getIdGrupo()
+						&& sesionA.equalsInTime(sesionB)) {
+					if (sesionA.getClase().esOptativa() && sesionB.getClase().esOptativa()) {
+						if (sesionA.getClase().getMateriaFinal().getIdMateria() == sesionB.getClase().getMateriaFinal()
+								.getIdMateria() && sesionA.getIdSesion() != sesionB.getIdSesion()) {
+							clash += 5;
+							break;
 						}
 
-						for(Docente a : docA){
-							for(Docente b : docB){
-								if(a.equals(b) && sesionA.equalsInTime(sesionB)){
-									clash += 5;
-									break;
-								}
-							}
+					} else {
+						if (sesionA.getIdSesion() != sesionB.getIdSesion()) {
+							clash += 5;
+							break;
 						}
 					}
 				}
 			}
 		}
 		return clash;
-	}
-
-	private Integer clashSesionAlDia() {
-		Integer clash = 0;
-		for (Grupo grupo : this.grupos) {
-			for (Clase clase : grupo.getClases()) {
-				for (Sesion sesionA : clase.getSesiones()) {
-					for (Sesion sesionB : clase.getSesiones()) {
-						if (sesionA.getInicio().getDia().equals(sesionB.getInicio().getDia())
-								&& sesionA.getClase().equals(sesionB.getClase())
-								&& !sesionA.equals(sesionB)) {
-							if (sesionA.getDuracion() == 2 && sesionB.getDuracion() == 2) {
-								clash += 5;
-								break;
-							} else if (!(sesionA.getFinSesion() == sesionB.getInicio().getHoraInicio()
-									|| sesionB.getFinSesion() == sesionA.getInicio().getHoraInicio())) {
-								clash++;
-								break;
-							}
-						}
-					}
-				}
-			}
-		}
-		return clash / 2;
 	}
 
 	private Integer clashHorasMuertas() {
 		Integer clash = 0;
 		for (Grupo grupo : this.grupos) {
-			List<Sesion> sesiones = getSesionesOrdenadasSinPracticas(grupo);
+			List<Sesion> sesiones = getSesionesTimeslotsGrupo(grupo);
 			for (int i = 0; i < sesiones.size() - 1; i++) {
-				if (!sesiones.get(i).getClase().esOptativa()
-						&& sesiones.get(i).getInicio().getDia().equals(sesiones.get(i + 1).getInicio().getDia())
-						&& sesiones.get(i).getInicio().getHoraInicio() + sesiones.get(i).getDuracion() != sesiones
-								.get(i + 1).getInicio().getHoraInicio()) {
-					clash++;
+				if (sesiones.get(i).getInicio().getDia() == sesiones.get(i + 1).getInicio().getDia()) {
+					if (sesiones.get(i).getInicio().getHoraInicio() + sesiones.get(i).getDuracion() != sesiones
+							.get(i + 1).getInicio().getHoraInicio()) {
+						clash += 3;
+					}
 				}
 			}
 		}
@@ -421,57 +342,131 @@ public class Timetable {
 	private Integer clashClaseALas7() {
 		Integer clash = 0;
 		for (Grupo grupo : this.grupos) {
-			if (grupo.getTurno() == 1) {
-				List<Sesion> sesiones = getSesionesOrdenadas(grupo);
-				Integer dia = 0;
-				for (Sesion sesion : sesiones) {
-					if (!sesion.getClase().esOptativa()) {
-						if (!sesion.getInicio().getDia().equals(dia)) {
-							if (sesion.getInicio().getHoraInicio() != 7) {
-								clash += 3;
-							}
-							dia = sesion.getInicio().getDia();
-						}
+			List<Timeslot> slots = getTimeslotsGrupo(grupo);
+			Integer horaInicio = this.getDisponibilidadGrupos().get(grupo.getIdGrupo()).get(0).getHoraInicio();
+			Integer dia = 0;
+			int i = 0;
+			while (dia < 5 && i < slots.size()) {
+				if (slots.get(i).getDia() != dia) {
+					if (slots.get(i).getHoraInicio() != horaInicio) {
+						clash += 2;
 					}
+					dia = slots.get(i).getDia();
 				}
+				i++;
 			}
 		}
 		return clash;
 	}
 
-	private Integer clashClaseALas18() {
+	private Integer clashSesionAlDia() {
 		Integer clash = 0;
 		for (Grupo grupo : this.grupos) {
-			if (grupo.getTurno() == 2) {
-				Sesion[][] sesiones = getEstructura(grupo);
-				for (int i = 0; i < 5; i++) {
-					Boolean claseALas18 = false;
-					Boolean diaLibre = true;
-
-					for (int j = 0; j < 14; j++) {
-						if (sesiones[i][j] != null && !sesiones[i][j].getClase().esOptativa()) {
-							if (sesiones[i][j] != null
-									&& !sesiones[i][j].getClase().getMateria().esPracticasOServicio()) {
-								diaLibre = false;
-								if (sesiones[i][j].getInicio().getHoraInicio() == 18) {
-									claseALas18 = true;
-									break;
-								} else if (sesiones[i][j].getInicio().getHoraInicio() == 19
-										&& sesiones[i][j].getDuracion() == 2) {
-									claseALas18 = true;
-									break;
-								}
-							}
-						}
-					}
-					if (!claseALas18 && !diaLibre) {
-						clash++;
+			List<Sesion> sesiones = getSesionesTimeslotsGrupo(grupo);
+			for (int i = 0; i < sesiones.size() - 1; i++) {
+				Sesion sesionA = sesiones.get(i);
+				for (int j = i + 1; j < sesiones.size()
+						&& sesionA.getInicio().getDia() == sesiones.get(j).getInicio().getDia(); j++) {
+					Sesion sesionB = sesiones.get(j);
+					if (sesionA.getClase().getMateriaFinal().getIdMateria() == sesionB.getClase().getMateriaFinal()
+							.getIdMateria() && sesionA.getDuracion() + sesionB.getDuracion() >= 4) {
+						clash += 5;
+						break;
 					}
 				}
 			}
 		}
 		return clash;
 	}
+
+	private Integer clashProfesorDisponible() {
+		Integer clash = 0;
+		for (Sesion sesionA : this.getSesiones()) {
+			// Check if professor is available
+			for (Sesion sesionB : this.getSesiones()) {
+				if (sesionA.getClase().getDocente().equals(sesionB.getClase().getDocente())
+						&& sesionA.equalsInTime(sesionB) && sesionA.getIdSesion() != sesionB.getIdSesion()) {
+					clash += 5;
+					break;
+				}
+			}
+		}
+		return clash;
+	}
+
+	private Integer clashJornadasGrupos() {
+		Integer clash = 0;
+		for (Grupo grupo : this.grupos) {
+			List<Sesion> sesiones = getSesionesTimeslotsGrupo(grupo);
+			Integer dia = 0;
+			if(grupo.getTurno() == 1){
+				for (int i = 0; i < sesiones.size() - 1; i++) {
+					if (sesiones.get(i).getInicio().getDia() != dia) {
+						if(sesiones.get(i).getInicio().getHoraInicio() - grupo.getHoraEntrada() > 1){
+							clash += 5;
+						}
+						if(dia != 0 && sesiones.get(i-1).getInicio().getHoraInicio() + sesiones.get(i-1).getDuracion() - grupo.getHoraSalida() > 0){
+							clash += 5;
+						}
+					}
+				}
+			}
+		}
+		return clash;
+	}
+
+	// private Integer clashAulaOcupada() {
+	// Integer clash = 0;
+	// for (Sesion sesionA : this.getSesiones()) {
+
+	// // Check if room is taken
+	// for (Sesion sesionB : this.getSesiones()) {
+	// if (!sesionA.getClase().esOptativa() && !sesionB.getClase().esOptativa()) {
+	// if (sesionA.getAula().equals(sesionB.getAula()) &&
+	// sesionA.equalsInTime(sesionB)
+	// && sesionA.getIdSesion() != sesionB.getIdSesion()) {
+	// clash++;
+	// break;
+	// }
+	// }
+	// }
+	// }
+	// return clash;
+	// }
+
+	// private Integer clashClaseALas18() {
+	// Integer clash = 0;
+	// for (Grupo grupo : this.grupos) {
+	// if (grupo.getTurno() == 2) {
+	// Sesion[][] sesiones = getEstructura(grupo);
+	// for (int i = 0; i < 5; i++) {
+	// Boolean claseALas18 = false;
+	// Boolean diaLibre = true;
+
+	// for (int j = 0; j < 14; j++) {
+	// if (sesiones[i][j] != null && !sesiones[i][j].getClase().esOptativa()) {
+	// if (sesiones[i][j] != null
+	// && !sesiones[i][j].getClase().getMateria().esPracticasOServicio()) {
+	// diaLibre = false;
+	// if (sesiones[i][j].getInicio().getHoraInicio() == 18) {
+	// claseALas18 = true;
+	// break;
+	// } else if (sesiones[i][j].getInicio().getHoraInicio() == 19
+	// && sesiones[i][j].getDuracion() == 2) {
+	// claseALas18 = true;
+	// break;
+	// }
+	// }
+	// }
+	// }
+	// if (!claseALas18 && !diaLibre) {
+	// clash++;
+	// }
+	// }
+	// }
+	// }
+	// return clash;
+	// }
 
 	private Integer clashJornadaHomogeneaGrupos() {
 		Integer clash = 0;
@@ -480,7 +475,11 @@ public class Timetable {
 			// Integer[] sesionesDia = { 0, 0, 0, 0, 0 };
 			for (Clase clase : grupo.getClases()) {
 				if (!clase.esPracticasOServicio() && !clase.esOptativa()) {
+					// log.info("Clase: " + clase.getMateriaFinal().getMateria());
 					for (Sesion sesion : clase.getSesiones()) {
+						// log.info("Sesion: " + sesion.getInicio().getDia() + " " +
+						// sesion.getInicio().getHoraInicio() + " "
+						// + sesion.getDuracion());
 						horasDia[sesion.getInicio().getDia() - 1] += sesion.getDuracion();
 						// sesionesDia[sesion.getInicio().getDia() - 1]++;
 					}
@@ -587,6 +586,62 @@ public class Timetable {
 		return sesionesFinal;
 	}
 
+	public List<Sesion> getSesionesTimeslotsGrupo(Grupo grupo) {
+		List<Sesion> sesiones = new ArrayList<>();
+		Boolean agregarOptativa = true;
+		for (Clase clase : grupo.getClases()) {
+			if (!clase.esPracticasOServicio()) {
+				if (clase.esOptativa()) {
+					if (agregarOptativa) {
+						for (Sesion sesion : clase.getSesiones()) {
+							sesiones.add(sesion);
+						}
+						agregarOptativa = false;
+					}
+				} else {
+					for (Sesion sesion : clase.getSesiones()) {
+						sesiones.add(sesion);
+					}
+				}
+			}
+		}
+
+		sesiones.sort((t1, t2) -> {
+			return t1.getInicio().getDia() * 100 + t1.getInicio().getHoraInicio() - t2.getInicio().getDia() * 100
+					- t2.getInicio().getHoraInicio();
+		});
+		return sesiones;
+	}
+
+	public List<Timeslot> getTimeslotsGrupo(Grupo grupo) {
+		List<Timeslot> timeslots = new ArrayList<>();
+		Boolean agregarOptativa = true;
+		for (Clase clase : grupo.getClases()) {
+			if (!clase.esPracticasOServicio()) {
+				if (clase.esOptativa()) {
+					if (agregarOptativa) {
+						for (Sesion sesion : clase.getSesiones()) {
+							if (sesion.getInicio().getDia() != 6 && sesion.getInicio().getDia() != 7) {
+								timeslots.add(sesion.getInicio());
+							}
+						}
+						agregarOptativa = false;
+					}
+				} else {
+					for (Sesion sesion : clase.getSesiones()) {
+						if (sesion.getInicio().getDia() != 6 && sesion.getInicio().getDia() != 7) {
+							timeslots.add(sesion.getInicio());
+						}
+					}
+				}
+			}
+		}
+
+		timeslots.sort((t1, t2) -> {
+			return t1.getDia() * 100 + t1.getHoraInicio() - t2.getDia() * 100 - t2.getHoraInicio();
+		});
+		return timeslots;
+	}
 }
 
 // TODO: ASIGNACION DE DÍAS, HORAS LIMITE EN LOS HORARIOS (INF, SUP), OPTATIVAS,

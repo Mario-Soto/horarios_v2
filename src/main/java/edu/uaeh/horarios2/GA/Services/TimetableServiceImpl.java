@@ -12,6 +12,7 @@ import edu.uaeh.horarios2.domain.Grupo;
 import edu.uaeh.horarios2.domain.Materia;
 import edu.uaeh.horarios2.domain.Sesion;
 import edu.uaeh.horarios2.domain.catalogos.TipoMateria;
+import edu.uaeh.horarios2.generacionHorarios.GeneracionService;
 import edu.uaeh.horarios2.service.AulaService;
 import edu.uaeh.horarios2.service.ClaseService;
 import edu.uaeh.horarios2.service.DocenteService;
@@ -48,6 +49,9 @@ public class TimetableServiceImpl implements TimetableService {
     @Autowired
     private TipoMateriaService tipoMateriaService;
 
+    @Autowired
+    private GeneracionService generacionService;
+
     @Override
     public Timetable timetable() {
         Timetable timetable = new Timetable();
@@ -62,6 +66,7 @@ public class TimetableServiceImpl implements TimetableService {
         timetable.setSesiones(sesionService.getSesiones());
         timetable.setTimeslotsPracticasProfesionales(timeslotService.getTimeslotsPracticasProfesionales());
         timetable.setTimeslotsServicioSocial(timeslotService.getTimeslotsServicioSocial());
+        timetable.setDisponibilidadGrupos(generacionService.obtenerDisponibilidadesGrupos());
         return timetable;
     }
 

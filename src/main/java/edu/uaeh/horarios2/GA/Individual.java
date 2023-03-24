@@ -2,6 +2,7 @@ package edu.uaeh.horarios2.GA;
 
 import java.util.List;
 import java.util.ArrayList;
+import java.util.HashMap;
 
 import edu.uaeh.horarios2.domain.Clase;
 import edu.uaeh.horarios2.domain.Docente;
@@ -33,22 +34,8 @@ public class Individual{
         for (Grupo grupo : timetable.getGrupos()) {
             List<Clase> clases = grupo.getClases();
             for (Clase clase : clases) {
-                Docente docente;
-                int professorId;
-                if (clase.getMateria().getMateria().contains("OPTATIVA")) {
-                    professorId = -10;
-                    docente = null;
-                } else if (clase.getMateria().getMateria().contains("PROPEDÉUTICA")) {
-                    docente = clase.getGrupo().getMateriaDestino(clase.getMateria()).getRandomDocentePermitido();
-                    professorId = docente.getIdDocente().intValue();
-                } else if (clase.getMateria().getMateria().contains("IDIOMA")) {
-                    docente = clase.getGrupo().getMateriaDestino(clase.getMateria()).getRandomDocentePermitido();
-                    professorId = docente.getIdDocente().intValue();
-                } else {
-                    docente = clase.getMateria().getRandomDocentePermitido();
-                    professorId = docente.getIdDocente().intValue();
-                }
-
+                Docente docente = clase.getDocente();
+                int professorId = docente.getIdDocente().intValue();
                 for (Sesion sesion : clase.getSesiones()) {
                     // Add random timeslot
                     int timeslotId;
@@ -66,11 +53,7 @@ public class Individual{
                     } else {
                         // log.info("Clase normal - inicio");
                         Timeslot slot;
-                        if (sesion.getDuracion() == 2 && grupo.getTurno() == 2) {
-                            slot = timetable.getRandomTimeslotAntesDeLas8(grupo, docente);
-                        } else {
-                            slot = timetable.getRandomTimeslot(grupo, docente);
-                        }
+                        slot = timetable.getRandomTimeslot(clase.getGrupo(), docente, sesion.getDuracion());
                         // log.info("Slot definido");
                         timeslotId = slot.getIdTimeslot().intValue();
                     }
